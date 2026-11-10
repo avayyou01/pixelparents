@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { currentUser } from "@clerk/nextjs/server";
+import { notFound, redirect } from "next/navigation";
 import { getSignupForEdit } from "@/lib/db/signups";
 import { readApprovalStatus } from "@/lib/approval";
 import { sendWelcomeAfterOnboarding } from "@/app/signup/actions";
+import { hasSignupLogin, signupAccountPath } from "@/lib/signup-account";
 
 export const metadata: Metadata = {
   title: "You're all set — GoPixel",
@@ -17,9 +20,8 @@ const UUID_RE =
 // (confirmStudentCode) — telling them "we're reviewing you, wait for an email"
 // is a dead-end that contradicts their real state. So when we can resolve the
 // signup (via ?id=), we branch: approved families get a direct dashboard link;
-// only genuinely-pending families see the review-and-email copy. Without a
-// resolvable id we keep the neutral pending copy but still offer a dashboard
-// link so it's never a wait-for-email dead-end.
+// only genuinely-pending families see the review-and-email copy. A valid saved
+// profile and its matching login are required before either completion message.
 export default async function WelcomePage({
   searchParams,
 }: {
@@ -28,24 +30,16 @@ export default async function WelcomePage({
   const { id } = await searchParams;
   const validId = id && UUID_RE.test(id) ? id : null;
 
-  // Reaching this screen IS completing onboarding — the welcome email goes out
-  // here (once; guarded server-side), not at signup (Aug 18 ruling).
-  if (validId) await sendWelcomeAfterOnboarding(validId);
-
-  let approved = false;
-  if (validId) {
-    try {
-      const data = await getSignupForEdit(validId);
-      if (data) {
-        approved =
-          readApprovalStatus(
-            (data.signup.extra ?? {}) as Record<string, unknown>,
-          ) === "approved";
-      }
-    } catch {
-      // Non-fatal — fall back to the neutral pending copy + dashboard link.
-    }
-  }
+  if (!validId) notFound();
+  const data = await getSignupForEdit(validId);
+  if (!data) notFound();
+  // A saved/verified profile is not evidence of a Clerk login. Invited students
+  // bypass /signup entirely; old interrupted signups can have the same gap.
+  // Check before stamping onboardedAt or sending the completion email.
+  const user = await currentUser();
+  if (!hasSignupLogin(user, data.signup.email)) redirect(signupAccountPath(validId));
+  await sendWelcomeAfterOnboarding(validId);
+  const approved = readApprovalStatus((data.signup.extra ?? {}) as Record<string, unknown>) === "approved";
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center gap-5 bg-black px-6 text-center text-white">

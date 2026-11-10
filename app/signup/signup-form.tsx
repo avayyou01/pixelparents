@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, useSignUp } from "@clerk/nextjs";
+import { createSignupAccount, verifySignupAccount, signupAccountPath } from "@/lib/signup-account";
 import { BotIdClient } from "botid/client";
 import { affiliationForRole } from "@/lib/options";
 import { useAutoSave } from "@/lib/use-auto-save";
@@ -276,85 +277,49 @@ export default function SignupForm({
     queue({ accountType: choice, ohsAffiliation: derived }, true);
   }
 
-  // Create the Clerk account (email + password) once the profile row is
-  // complete, then land on onboarding. Outcomes:
-  //   - complete            → session activated, straight to /signup/thanks
-  //   - missing_requirements → the instance wants the email verified: send a
-  //     code and swap the form for the inline code panel
-  //   - bad password        → the ONE blocking error (it's fixable in place)
-  //   - anything else       → log and continue to onboarding without an
-  //     account (e.g. the password strategy still disabled in the Clerk
-  //     dashboard, the email already having an account, a network blip).
-  //     Account creation must never cost us a completed signup.
+  // Retain the saved profile/draft until login is actually ready, so retrying
+  // an auth failure never creates a second profile or loses the recovery link.
+  const [accountRecoveryId, setAccountRecoveryId] = useState<string | null>(null);
+  function proceedSignedIn(id: string) {
+    try {
+      window.localStorage.removeItem(ID_KEY);
+      window.localStorage.removeItem(V_KEY);
+    } catch { /* storage unavailable */ }
+    router.push(`/signup/thanks?id=${id}`);
+  }
+
   async function createClerkAccount(id: string) {
-    const proceed = () => router.push(`/signup/thanks?id=${id}`);
-    if (isSignedIn || !signUp) {
-      proceed();
+    setAccountRecoveryId(id);
+    if (isSignedIn) {
+      proceedSignedIn(id);
       return;
     }
-    try {
-      const { error } = await signUp.password({ emailAddress: v.email.trim(), password });
-      if (error) {
-        // A bad password (weak / breached / too short) is the one blocking
-        // case — it's fixable right here on the field.
-        if (error.code.startsWith("form_password")) {
-          setErrors({ password: error.longMessage ?? error.message });
-          setMessage("Please choose a different password.");
-          if (typeof document !== "undefined") {
-            document.getElementById("password")?.scrollIntoView({ block: "center" });
-          }
-          setSubmitting(false);
-          return;
-        }
-        console.error("clerk sign-up failed:", error.code);
-        proceed();
-        return;
-      }
-      if (signUp.status === "complete") {
-        const { error: finErr } = await signUp.finalize();
-        if (finErr) console.error("clerk finalize failed:", finErr.code);
-        proceed();
-        return;
-      }
-      // "missing_requirements" — the instance wants the email verified. Send a
-      // code and swap to the inline panel.
-      const { error: sendErr } = await signUp.verifications.sendEmailCode();
-      if (sendErr) {
-        console.error("clerk sendEmailCode failed:", sendErr.code);
-        proceed();
-        return;
-      }
+    const result = await createSignupAccount(signUp, v.email, password);
+    if (result.kind === "complete") {
+      proceedSignedIn(id);
+      return;
+    }
+    if (result.kind === "verify") {
       pendingIdRef.current = id;
       setClerkStage("verify");
       setMessage(null);
-      setSubmitting(false);
-    } catch (err) {
-      console.error("clerk sign-up threw:", err);
-      proceed();
+    } else {
+      setMessage(result.message);
+      if (result.password) setErrors({ password: result.message });
     }
+    setSubmitting(false);
   }
 
   async function onVerifyCode() {
-    if (!signUp || verifying) return;
+    if (verifying || !pendingIdRef.current) return;
     setVerifying(true);
     setClerkError(null);
-    try {
-      const { error } = await signUp.verifications.verifyEmailCode({ code: code.trim() });
-      if (error) {
-        setClerkError(error.longMessage ?? "That code didn't work. Check the digits and try again.");
-        setVerifying(false);
-        return;
-      }
-      if (signUp.status === "complete") {
-        const { error: finErr } = await signUp.finalize();
-        if (finErr) console.error("clerk finalize failed:", finErr.code);
-      }
-      router.push(`/signup/thanks?id=${pendingIdRef.current}`);
+    const result = await verifySignupAccount(signUp, code);
+    if (result.kind === "complete") {
+      proceedSignedIn(pendingIdRef.current);
       return;
-    } catch (err) {
-      console.error("clerk verifyEmailCode threw:", err);
-      setClerkError("Something went wrong. Please try again.");
     }
+    setClerkError(result.kind === "error" ? result.message : "Please finish verifying your email.");
     setVerifying(false);
   }
 
@@ -453,20 +418,7 @@ export default function SignupForm({
     }
     const res = await completeSignup(id);
     if (res.ok) {
-      // Signup is persisted server-side now — drop the local draft so a later
-      // visit starts clean.
-      if (typeof window !== "undefined") {
-        try {
-          window.localStorage.removeItem(ID_KEY);
-          window.localStorage.removeItem(V_KEY);
-        } catch {
-          /* non-fatal */
-        }
-      }
-      // The community profile is saved; now mint the CLERK account with the
-      // password chosen above. The profile is the product and the account is
-      // the bonus, so with one exception (a fixable bad password) nothing on
-      // this path is allowed to block the member from reaching onboarding.
+      // Saving the profile alone must not count as a completed login.
       await createClerkAccount(id);
     } else {
       const errs = res.errors ?? {};
@@ -513,7 +465,7 @@ export default function SignupForm({
 
   // Inline email-code panel: shown when Clerk requires the address verified
   // before the account exists. The profile row is already complete, so the
-  // skip link is a first-class exit — never a trap.
+  // recovery link preserves that profile while completing authentication.
   if (clerkStage === "verify") {
     return (
       <div className="flex flex-col gap-6">
@@ -552,13 +504,11 @@ export default function SignupForm({
             >
               Resend code
             </button>
-            <button
-              type="button"
-              onClick={() => router.push(`/signup/thanks?id=${pendingIdRef.current}`)}
-              className="text-sm text-white/50 underline underline-offset-2 hover:text-white/80"
-            >
-              Skip for now — finish my profile first
-            </button>
+            {accountRecoveryId && (
+              <a href={signupAccountPath(accountRecoveryId, "profile")} className="text-sm text-amber-400 underline">
+                Finish login setup / use an existing account
+              </a>
+            )}
           </div>
         </Section>
       </div>
@@ -573,6 +523,11 @@ export default function SignupForm({
           <p className="rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
             {message}
           </p>
+        )}
+        {accountRecoveryId && (
+          <a href={signupAccountPath(accountRecoveryId, "profile")} className="text-sm text-amber-400 underline">
+            Finish login setup / use an existing account
+          </a>
         )}
 
         {/* Role choice — who is signing up. Hidden in co-parent join mode (an
