@@ -4,6 +4,41 @@ Follow-ups from the November 9 walkthrough that need no design decisions.
 Stacked on fix/nov-onboarding-feedback (both touch the interest picker); merge
 that one first.
 
+## Progress Update as of [November 11, 2026 — evening Pacific]
+
+### Summary of changes since last update
+
+Browser-tested both branches end to end and fixed one existing display bug the
+test surfaced.
+
+### Detail of changes made:
+
+- **Split highlight in suggestion chips (existing bug):** while typing, the
+  matched letters render as a separate element from the rest of the word, and
+  the chip's flex gap pushed them apart ("Bik ing"). The label is now wrapped
+  in one span, so the gap only applies between the icon, label and count.
+
+### Browser test (local dev server, Chrome, dark + light, 1588x582 window)
+
+Run against a local-only harness (stubbed session and data, never committed):
+- Signup headline reads "Join the GoPixel community"; `?ref=` shows
+  "Dana invited you to GoPixel" in both themes and never names a "Just me"
+  member.
+- Picker: section labels and edit-later note render; selecting a chip keeps it
+  in place with a checkmark and adds it above; clicking again removes it;
+  typing "bik" shows "· 3 people" / "· 1 person"; entering
+  "Dancing, Chess; hiking" adds three interests and maps "hiking" onto the
+  existing "Hiking".
+- Edit profile: with the profile arriving after load, the editor opens with
+  bio, expertise and help filled. The same steps against main's version of the
+  panel open with blank bio and help, reproducing the walkthrough bug.
+- Visibility controls show "Who can see this profile?" and the option
+  explanation; a failed save reverts with the existing error.
+- Wizard: mid-way through a step taller than the window, the Continue row is
+  pinned to the bottom of the viewport.
+- Measured contrast: Choose photos 12.2:1 (both themes), selected chip 6.5:1
+  light / 11.6:1 dark, Edit profile 6.8:1 light.
+
 ## Progress Update as of [November 11, 2026 — afternoon Pacific]
 
 ### Summary of changes since last update

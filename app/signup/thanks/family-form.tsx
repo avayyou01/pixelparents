@@ -176,7 +176,9 @@ export function TagPicker({
                 ) : (
                   <Icon className="h-3.5 w-3.5" strokeWidth={2} />
                 )}
-                {exact || selected ? s : <HighlightedText text={s} query={q} />}
+                {/* One span: inside the button's flex gap, the highlight's text
+                    pieces would otherwise render as separate gapped items. */}
+                <span>{exact || selected ? s : <HighlightedText text={s} query={q} />}</span>
                 {ql !== "" && !selected && (counts?.[s.toLowerCase()] ?? 0) > 0 && (
                   <span className="text-xs text-white/40">
                     · {peopleLabel(counts![s.toLowerCase()]!)}
