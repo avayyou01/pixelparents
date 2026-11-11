@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { getInterestPool } from "@/lib/interests";
+import { getInterestPoolWithCounts } from "@/lib/interests";
 import { getSignupForEdit } from "@/lib/db/signups";
 import { shareFieldsOrDefault, coerceShareVisibility } from "@/lib/share";
 import { keepPrivateOnShareSkip } from "@/lib/share-actions";
@@ -71,9 +71,9 @@ export default async function ThanksPage({
     );
   }
 
-  const [editData, interestPool, verifyState] = await Promise.all([
+  const [editData, { pool: interestPool, counts: interestCounts }, verifyState] = await Promise.all([
     getSignupForEdit(validId),
-    getInterestPool(),
+    getInterestPoolWithCounts(),
     getVerifyState(validId),
   ]);
 
@@ -297,7 +297,7 @@ export default async function ThanksPage({
             className="h-36 w-full object-cover object-center sm:h-48"
           />
           <figcaption className="absolute bottom-0 w-full bg-gradient-to-t from-black/80 to-transparent px-6 pb-2 pt-8 text-xs text-white/70">
-            OHS families at a Pixel community event
+            OHS families at a Pixel community event · the same banner everyone sees, not one of your photos
           </figcaption>
         </figure>
       )}
@@ -420,6 +420,7 @@ export default async function ThanksPage({
                             signupId={validId}
                             initialInterests={signup.parentInterests ?? []}
                             suggestedInterests={interestPool}
+                            interestCounts={interestCounts}
                             isStudent={isStudentFlow}
                           />
                         );

@@ -6,6 +6,7 @@ import InterestTiles from "./interest-tiles";
 import { getChildrenCount } from "@/lib/db/signups";
 import { getInterestPool } from "@/lib/interests";
 import { sanitizeRefToken, REFERRAL_PARAM, REFERRAL_AS_PARAM } from "@/lib/referral";
+import { getReferrerLine } from "@/lib/referral-names";
 
 // First value of a possibly-array search param.
 function firstParam(v: string | string[] | undefined): string | undefined {
@@ -34,6 +35,9 @@ export default async function SignupPage({
   const defaultAccountType =
     firstParam(sp[REFERRAL_AS_PARAM]) === "student" ? ("student" as const) : undefined;
 
+  const referrerLine = ref
+    ? await getReferrerLine(ref, { student: defaultAccountType === "student" })
+    : null;
   let kidsCount = 0;
   let interests: string[] = [];
   try {
@@ -52,6 +56,11 @@ export default async function SignupPage({
       <div className="relative z-10 mx-auto w-full max-w-2xl">
         <div className="flex flex-col items-center text-center">
           <PixelMascot widthClass="w-24" href="/" />
+          {referrerLine && (
+            <p className="mt-4 rounded-full border border-amber-400/40 bg-amber-400/10 px-4 py-1.5 text-sm font-medium text-amber-300">
+              {referrerLine}
+            </p>
+          )}
           <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
             Join the GoPixel community
           </h1>
