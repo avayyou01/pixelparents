@@ -152,11 +152,13 @@ export function StepInterests({
   signupId,
   initialInterests,
   suggestedInterests,
+  interestCounts,
   isStudent,
 }: {
   signupId: string;
   initialInterests: string[];
   suggestedInterests: string[];
+  interestCounts?: Record<string, number>;
   isStudent: boolean;
 }) {
   const [interests, setInterests] = useState<string[]>(initialInterests);
@@ -176,6 +178,7 @@ export function StepInterests({
           queue({ parentInterests: next }, true);
         }}
         suggestions={suggestedInterests}
+        counts={interestCounts}
         placeholder="e.g. Biking, Fantasy novels, Robotics…"
         labels={{
           selected: "Your selected interests",

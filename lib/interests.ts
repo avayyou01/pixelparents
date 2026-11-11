@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { getDb } from "./db";
+import { splitInterestEntries } from "./interest-split";
 
 // --- Case-insensitive canonicalization --------------------------------------
 //
@@ -85,12 +86,10 @@ export function buildCanonicalMap(spellings: Iterable<string>): Map<string, stri
 // drop case-insensitive duplicates (keeping first occurrence). Unknown interests
 // pass through unchanged so brand-new interests still work.
 export function canonicalizeInterests(input: string[], pool: string[]): string[] {
-  const canonical = buildCanonicalMap(pool);
+  const canonical = buildCanonicalMap(splitInterestEntries(pool));
   const out: string[] = [];
   const seen = new Set<string>();
-  for (const raw of input) {
-    const s = raw.trim();
-    if (!s) continue;
+  for (const s of splitInterestEntries(input)) {
     const k = key(s);
     if (seen.has(k)) continue;
     seen.add(k);
@@ -123,6 +122,14 @@ export async function canonicalizeAgainstPool(input: string[]): Promise<string[]
 // pill PICKER calls it WITHOUT the flag: it legitimately wants every spelling
 // anyone has typed, including in-progress rows, for autocomplete + canonicalization.
 export async function getInterestPool(opts?: { completedOnly?: boolean }): Promise<string[]> {
+  return (await getInterestPoolWithCounts(opts)).pool;
+}
+
+// Pool plus how many entries (members and students) list each interest, keyed
+// by the lowercase form. One query; the picker shows the count while typing.
+export async function getInterestPoolWithCounts(opts?: {
+  completedOnly?: boolean;
+}): Promise<{ pool: string[]; counts: Record<string, number> }> {
   const signupWhere = opts?.completedOnly
     ? sql`WHERE share_token IS NOT NULL AND btrim(first_name) <> '' AND btrim(email) <> ''`
     : sql``;
@@ -140,15 +147,21 @@ export async function getInterestPool(opts?: { completedOnly?: boolean }): Promi
       WHERE t.i IS NOT NULL AND t.i <> ''
     `);
     const rows = (result.rows ?? []) as Array<Record<string, unknown>>;
-    const spellings = rows
-      .map((r) => (typeof r.interest === "string" ? r.interest : ""))
-      .filter(Boolean);
+    const spellings = splitInterestEntries(
+      rows.map((r) => (typeof r.interest === "string" ? r.interest : "")),
+    );
     const canonical = buildCanonicalMap(spellings);
-    return [...new Set(canonical.values())].sort((a, b) =>
+    const counts: Record<string, number> = {};
+    for (const s of spellings) {
+      const k = key(s);
+      counts[k] = (counts[k] ?? 0) + 1;
+    }
+    const pool = [...new Set(canonical.values())].sort((a, b) =>
       a.localeCompare(b, undefined, { sensitivity: "base" }),
     );
+    return { pool, counts };
   } catch (err) {
     console.error("getInterestPool failed:", err);
-    return [];
+    return { pool: [], counts: {} };
   }
 }

@@ -12,6 +12,8 @@
 // group families that genuinely share a spelling; it can't merge two distinct
 // interests. (See lib/interest-matching.test.ts for the regression pins.)
 
+import { splitInterestEntry } from "./interest-split";
+
 // One other family's worth of matchable data. `interests` is the family's shared
 // interest set (already coarsened/opt-in-gated by the data layer); `signalCount`
 // is a richness proxy used ONLY as a deterministic tiebreak.
@@ -75,11 +77,13 @@ export function rankInterestMatches(opts: RankInterestOptions): InterestMatch[] 
   const seen = new Set<string>();
   const orderedViewer: Array<{ key: string; label: string }> = [];
   for (const raw of viewerInterests) {
-    const k = normalizeKey(raw);
-    if (k && !seen.has(k)) {
-      seen.add(k);
-      // Safe: normalizeKey returned non-null, so raw is a non-blank string.
-      orderedViewer.push({ key: k, label: (raw as string).trim() });
+    if (typeof raw !== "string") continue;
+    for (const part of splitInterestEntry(raw)) {
+      const k = normalizeKey(part);
+      if (k && !seen.has(k)) {
+        seen.add(k);
+        orderedViewer.push({ key: k, label: part });
+      }
     }
   }
   if (orderedViewer.length === 0) return [];
@@ -93,8 +97,11 @@ export function rankInterestMatches(opts: RankInterestOptions): InterestMatch[] 
 
     const candKeys = new Set<string>();
     for (const i of c.interests) {
-      const k = normalizeKey(i);
-      if (k) candKeys.add(k);
+      if (typeof i !== "string") continue;
+      for (const part of splitInterestEntry(i)) {
+        const k = normalizeKey(part);
+        if (k) candKeys.add(k);
+      }
     }
     // Iterate the VIEWER's interests so shared stays in viewer order + spelling.
     const sharedInterests = orderedViewer

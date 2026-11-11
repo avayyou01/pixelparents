@@ -76,7 +76,7 @@ export default async function WelcomePage({
           href="/"
           className="rounded-full border border-white/20 px-5 py-2 text-sm text-white/80 transition-colors hover:bg-white/10"
         >
-          Back home
+          Go to the GoPixel homepage
         </Link>
       </div>
     </main>

@@ -8,6 +8,7 @@ import { optimizeImage } from "@/lib/image";
 import type { Photo } from "@/lib/db/schema/signups";
 import { MentionCaptionInput, type MentionCandidate } from "@/components/mention-caption-input";
 import { iconForInterest } from "@/lib/interest-icons";
+import { splitInterestEntry } from "@/lib/interest-split";
 import { TagList } from "@/components/tag-list";
 import { useAutoSave } from "@/lib/use-auto-save";
 import { SaveStatus } from "@/components/save-status";
@@ -45,18 +46,25 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
   );
 }
 
+function peopleLabel(n: number): string {
+  return n === 1 ? "1 person" : `${n} people`;
+}
+
 export function TagPicker({
   value,
   onChange,
   suggestions,
   placeholder,
   labels,
+  counts,
 }: {
   value: string[];
   onChange: (next: string[]) => void;
   suggestions: string[];
   placeholder: string;
   labels?: { selected: string; explore: string; exploreHint: string };
+  /** Lowercase interest → how many people list it; shown on matches while typing. */
+  counts?: Record<string, number>;
 }) {
   const [draft, setDraft] = useState("");
   const q = draft.trim();
@@ -65,12 +73,12 @@ export function TagPicker({
   // Add a tag — preferring an existing suggestion's exact spelling so typing
   // "biking" selects the existing "Biking" rather than creating a near-duplicate.
   const add = (raw: string) => {
-    const t = raw.trim();
-    if (!t) return;
-    const canonical = suggestions.find((s) => s.toLowerCase() === t.toLowerCase()) ?? t;
-    if (!value.some((v) => v.toLowerCase() === canonical.toLowerCase())) {
-      onChange([...value, canonical]);
+    const next = [...value];
+    for (const t of splitInterestEntry(raw)) {
+      const canonical = suggestions.find((s) => s.toLowerCase() === t.toLowerCase()) ?? t;
+      if (!next.some((v) => v.toLowerCase() === canonical.toLowerCase())) next.push(canonical);
     }
+    if (next.length !== value.length) onChange(next);
     setDraft("");
   };
   const remove = (t: string) => onChange(value.filter((v) => v !== t));
@@ -168,7 +176,14 @@ export function TagPicker({
                 ) : (
                   <Icon className="h-3.5 w-3.5" strokeWidth={2} />
                 )}
-                {exact || selected ? s : <HighlightedText text={s} query={q} />}
+                {/* One span: inside the button's flex gap, the highlight's text
+                    pieces would otherwise render as separate gapped items. */}
+                <span>{exact || selected ? s : <HighlightedText text={s} query={q} />}</span>
+                {ql !== "" && !selected && (counts?.[s.toLowerCase()] ?? 0) > 0 && (
+                  <span className="text-xs text-white/40">
+                    · {peopleLabel(counts![s.toLowerCase()]!)}
+                  </span>
+                )}
               </button>
             );
           })}
