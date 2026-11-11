@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, useTransition } from "react";
+import { Pencil } from "lucide-react";
 import { IconSparkles, IconCode } from "@/components/icons";
 import {
   setEnrichmentOptIn,
@@ -122,6 +123,16 @@ export function EnrichmentPanel({
       else setMsg("Nothing to update right now.");
     });
   }, [memberId]);
+
+  // The draft fields are seeded once at mount, but the curated profile can
+  // arrive later (an inline build, a refresh), so seed again on every open or
+  // the editor shows blank fields over a bio that exists.
+  function startEditing() {
+    setBio(curated?.bio ?? "");
+    setTags((curated?.expertiseTags ?? []).join(", "));
+    setHelp((curated?.canHelpWith ?? []).join("\n"));
+    setEditing(true);
+  }
 
   const onSaveEdit = useCallback(() => {
     start(async () => {
@@ -252,10 +263,11 @@ export function EnrichmentPanel({
               {!editing ? (
                 <button
                   type="button"
-                  onClick={() => setEditing(true)}
-                  className="text-xs text-amber-400 hover:underline"
+                  onClick={startEditing}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/60 px-3.5 py-1.5 text-sm font-medium text-amber-300 transition hover:bg-amber-400/10"
                 >
-                  Edit
+                  <Pencil className="h-3.5 w-3.5" strokeWidth={2} />
+                  Edit profile
                 </button>
               ) : null}
             </div>
