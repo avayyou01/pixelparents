@@ -130,9 +130,7 @@ function FamilyVisibilityControl({
   return (
     <div className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-white/35">
-          Visibility
-        </span>
+        <span className="text-xs font-semibold text-white/60">Who can see this profile?</span>
         <div className="inline-flex rounded-full border border-white/15 bg-white/[0.04] p-0.5 text-xs">
           {SHARE_VISIBILITY.map((o) => {
             const active = o.value === v;
@@ -155,8 +153,8 @@ function FamilyVisibilityControl({
       </div>
       <p className="text-xs text-white/40">
         {v === "private"
-          ? "Hidden from everyone except your family."
-          : "Visible to signed-in OHS families in the directory."}
+          ? "Just me: hidden from everyone except your family."
+          : "OHS Families: other signed-in, verified OHS families can find this profile in the directory. It is never public."}
       </p>
       {error && <p className="text-xs text-red-400" aria-live="polite">{error}</p>}
     </div>

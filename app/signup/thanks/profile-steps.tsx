@@ -177,7 +177,14 @@ export function StepInterests({
         }}
         suggestions={suggestedInterests}
         placeholder="e.g. Biking, Fantasy novels, Robotics…"
+        labels={{
+          selected: "Your selected interests",
+          explore: "Explore interests",
+          exploreHint:
+            "Interests the OHS community has already added. Choose any that fit, or type to add your own.",
+        }}
       />
+      <p className="text-sm text-white/45">You can add or change your interests later.</p>
       <SaveStatus status={status} />
     </div>
   );

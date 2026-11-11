@@ -134,7 +134,9 @@ export function OnboardingWizard({
         ))}
       </OnboardingGateContext.Provider>
 
-      <div className="mt-10 flex flex-wrap items-center gap-3 border-t border-white/10 pt-6">
+      {/* Sticky so Continue stays on screen when a step is taller than the
+          window; on a tall window it sits in place like any other row. */}
+      <div className="sticky bottom-0 z-20 mt-10 flex flex-wrap items-center gap-3 border-t border-white/10 bg-black/90 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 backdrop-blur sm:pt-6">
         {index > 0 && (
           <button
             type="button"

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Plus } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 import { GRADES } from "@/lib/options";
 import { optimizeImage } from "@/lib/image";
 import type { Photo } from "@/lib/db/schema/signups";
@@ -50,11 +50,13 @@ export function TagPicker({
   onChange,
   suggestions,
   placeholder,
+  labels,
 }: {
   value: string[];
   onChange: (next: string[]) => void;
   suggestions: string[];
   placeholder: string;
+  labels?: { selected: string; explore: string; exploreHint: string };
 }) {
   const [draft, setDraft] = useState("");
   const q = draft.trim();
@@ -72,12 +74,13 @@ export function TagPicker({
     setDraft("");
   };
   const remove = (t: string) => onChange(value.filter((v) => v !== t));
+  const isSelected = (s: string) => value.some((v) => v.toLowerCase() === s.toLowerCase());
+  const removeMatching = (s: string) =>
+    onChange(value.filter((v) => v.toLowerCase() !== s.toLowerCase()));
 
-  const notSelected = suggestions.filter(
-    (s) => !value.some((v) => v.toLowerCase() === s.toLowerCase()),
-  );
-  // As you type, only keep suggestions that contain the typed text.
-  const available = ql ? notSelected.filter((s) => s.toLowerCase().includes(ql)) : notSelected;
+  // Selected suggestions stay in the list (marked, click again to remove) so a
+  // chip never jumps out from under the pointer.
+  const available = ql ? suggestions.filter((s) => s.toLowerCase().includes(ql)) : suggestions;
   // When the typed text isn't already an existing label (or selected), offer it
   // as a gold "create new" chip at the bottom of the list. Enter still adds it too.
   const matchesExisting = suggestions.some((s) => s.toLowerCase() === ql);
@@ -86,6 +89,11 @@ export function TagPicker({
 
   return (
     <div className="mt-1">
+      {labels && value.length > 0 && (
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/50">
+          {labels.selected}
+        </p>
+      )}
       {/* Selected tags compress to the first few + "+N more" so a long list of
           picks doesn't bury the input below it. Each chip stays a click-to-remove
           button; expanding reveals the rest inline. */}
@@ -110,6 +118,14 @@ export function TagPicker({
           }}
         />
       )}
+      {labels && (
+        <div className="mb-1 mt-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-white/50">
+            {labels.explore}
+          </p>
+          <p className="mt-0.5 text-sm text-white/55">{labels.exploreHint}</p>
+        </div>
+      )}
       <input
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
@@ -128,22 +144,31 @@ export function TagPicker({
           {available.map((s) => {
             const Icon = iconForInterest(s);
             const exact = ql !== "" && s.toLowerCase() === ql;
+            const selected = isSelected(s);
             return (
               <button
                 type="button"
                 key={s}
+                aria-pressed={selected}
                 // Stop the input's onBlur (which would add the raw draft) from
                 // firing before this click registers.
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => add(s)}
-                className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1 text-sm transition-colors hover:bg-white/10 ${
-                  exact
-                    ? "border-amber-400 text-amber-400"
-                    : "border-white/20 text-white/70"
+                onClick={() => (selected ? removeMatching(s) : add(s))}
+                title={selected ? `Remove "${s}"` : `Add "${s}"`}
+                className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1 text-sm transition-colors ${
+                  selected
+                    ? "border-amber-400 bg-amber-400/15 font-medium text-amber-300 hover:bg-amber-400/25"
+                    : exact
+                      ? "border-amber-400 text-amber-400 hover:bg-white/10"
+                      : "border-white/20 text-white/70 hover:bg-white/10"
                 }`}
               >
-                <Icon className="h-3.5 w-3.5" strokeWidth={2} />
-                {exact ? s : <HighlightedText text={s} query={q} />}
+                {selected ? (
+                  <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+                ) : (
+                  <Icon className="h-3.5 w-3.5" strokeWidth={2} />
+                )}
+                {exact || selected ? s : <HighlightedText text={s} query={q} />}
               </button>
             );
           })}
@@ -252,15 +277,25 @@ export function PhotoUploader({
 
   return (
     <div>
-      <input
-        type="file"
-        accept="image/*"
-        multiple
-        onChange={(e) => onFiles(e.target.files)}
-        className="mt-2 block w-full text-sm text-white/70 file:mr-3 file:rounded-full file:border-0 file:bg-white file:px-4 file:py-2 file:text-sm file:font-medium file:text-black"
-      />
-      {error && <p className="mt-1 text-sm text-red-400">{error}</p>}
-      {uploading > 0 && <p className="mt-1 text-sm text-white/50">Uploading {uploading}…</p>}
+      {/* A styled label, not the native control: the browser's own button
+          can't be restyled per theme, and in light mode file:bg-white flips to
+          near-black under unflipped black text. Amber + black reads in both. */}
+      <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-full bg-amber-400 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-amber-300 focus-within:ring-2 focus-within:ring-amber-400/60 focus-within:ring-offset-2 focus-within:ring-offset-black">
+        <Plus className="h-4 w-4" strokeWidth={2.5} />
+        Choose photos
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={(e) => {
+            onFiles(e.target.files);
+            e.target.value = "";
+          }}
+          className="sr-only"
+        />
+      </label>
+      {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
+      {uploading > 0 && <p className="mt-2 text-sm text-white/50">Uploading {uploading}…</p>}
       {photos.length > 0 && (
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           {photos.map((p, i) => (

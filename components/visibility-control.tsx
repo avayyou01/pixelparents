@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { SHARE_VISIBILITY, type ShareVisibility } from "@/lib/share";
 import { setShareVisibility, setShareVisibilityByToken } from "@/lib/share-actions";
 
-// A "Privacy: [OHS Families | Just me]" segmented slider.
+// A "Who can see this profile? [OHS Families | Just me]" segmented slider.
 // - editable (owner): clicking a segment changes it live.
 // - read-only (signed-in non-owner): shows all segments with the active one lit.
 // - signed-out: no segments are shown — with no publicly-viewable tier, a
@@ -61,9 +61,7 @@ export function VisibilityControl({
   return (
     <div className="flex flex-col items-end gap-1">
       <div className="flex items-center gap-2">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-white/35">
-          Privacy
-        </span>
+        <span className="text-xs font-semibold text-white/60">Who can see this profile?</span>
         <div className="inline-flex rounded-full border border-white/15 bg-white/[0.04] p-0.5 text-xs">
           {options.map((o) => {
             const active = o.value === v;
@@ -85,6 +83,13 @@ export function VisibilityControl({
           })}
         </div>
       </div>
+      {options.length > 0 && (
+        <p className="text-right text-xs text-white/45">
+          {v === "private"
+            ? "Just me: hidden from everyone except your family."
+            : "OHS Families: other signed-in, verified OHS families can find this profile in the directory."}
+        </p>
+      )}
       {error && <p className="text-xs text-red-400">{error}</p>}
     </div>
   );
