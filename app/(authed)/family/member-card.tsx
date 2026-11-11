@@ -398,7 +398,7 @@ export function MemberCard({
   const displayName = `${v.firstName} ${v.lastName}`.trim() || member.email || "Family member";
 
   return (
-    <div className="flex flex-col gap-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
+    <div id={isSelf ? "your-profile" : undefined} className="scroll-mt-20 flex flex-col gap-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="text-base font-semibold text-amber-400">{displayName}</h3>

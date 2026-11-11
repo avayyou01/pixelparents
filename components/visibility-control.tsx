@@ -59,12 +59,12 @@ export function VisibilityControl({
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
-      <div className="flex items-center gap-2">
+    <div className="flex max-w-full flex-col items-end gap-1">
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <span className="text-[11px] font-semibold uppercase tracking-wide text-white/35">
-          Privacy
+          Who can see this profile?
         </span>
-        <div className="inline-flex rounded-full border border-white/15 bg-white/[0.04] p-0.5 text-xs">
+        <div role="group" aria-label="Who can see this profile?" className="inline-flex rounded-full border border-white/15 bg-white/[0.04] p-0.5 text-xs">
           {options.map((o) => {
             const active = o.value === v;
             return (
@@ -85,6 +85,13 @@ export function VisibilityControl({
           })}
         </div>
       </div>
+      {editable && (
+        <p className="max-w-xs text-right text-xs text-white/65" aria-live="polite">
+          {v === "ohs"
+            ? "Your shared profile is visible to signed-in OHS family members."
+            : "Your profile is hidden from other members in the directory and on its share link."}
+        </p>
+      )}
       {error && <p className="text-xs text-red-400">{error}</p>}
     </div>
   );

@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Plus } from "lucide-react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { Check, Plus } from "lucide-react";
 import { GRADES } from "@/lib/options";
 import { optimizeImage } from "@/lib/image";
 import type { Photo } from "@/lib/db/schema/signups";
 import { MentionCaptionInput, type MentionCandidate } from "@/components/mention-caption-input";
 import { iconForInterest } from "@/lib/interest-icons";
-import { TagList } from "@/components/tag-list";
 import { useAutoSave } from "@/lib/use-auto-save";
 import { SaveStatus } from "@/components/save-status";
 import { IconX } from "@/components/icons";
@@ -57,6 +56,7 @@ export function TagPicker({
   placeholder: string;
 }) {
   const [draft, setDraft] = useState("");
+  const pickerId = useId();
   const q = draft.trim();
   const ql = q.toLowerCase();
 
@@ -73,11 +73,8 @@ export function TagPicker({
   };
   const remove = (t: string) => onChange(value.filter((v) => v !== t));
 
-  const notSelected = suggestions.filter(
-    (s) => !value.some((v) => v.toLowerCase() === s.toLowerCase()),
-  );
-  // As you type, only keep suggestions that contain the typed text.
-  const available = ql ? notSelected.filter((s) => s.toLowerCase().includes(ql)) : notSelected;
+  // Keep selected suggestions in place so a tap never makes a chip disappear.
+  const available = ql ? suggestions.filter((s) => s.toLowerCase().includes(ql)) : suggestions;
   // When the typed text isn't already an existing label (or selected), offer it
   // as a gold "create new" chip at the bottom of the list. Enter still adds it too.
   const matchesExisting = suggestions.some((s) => s.toLowerCase() === ql);
@@ -86,31 +83,34 @@ export function TagPicker({
 
   return (
     <div className="mt-1">
-      {/* Selected tags compress to the first few + "+N more" so a long list of
-          picks doesn't bury the input below it. Each chip stays a click-to-remove
-          button; expanding reveals the rest inline. */}
-      {value.length > 0 && (
-        <TagList
-          tags={value}
-          className="mb-2 flex flex-wrap items-center gap-2"
-          toggleClassName="inline-flex items-center rounded-md border border-white/20 px-3 py-1 text-sm font-medium text-white/70 transition-colors hover:bg-white/10"
-          renderTag={(t) => {
-            const Icon = iconForInterest(t);
-            return (
+      <section aria-labelledby={`${pickerId}-selected`} className="mb-4">
+        <h4 id={`${pickerId}-selected`} className="mb-2 text-sm font-semibold text-white/80">
+          Selected interests ({value.length})
+        </h4>
+        {value.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {value.map((t) => (
               <button
                 type="button"
                 key={t}
                 onClick={() => remove(t)}
-                className="inline-flex items-center gap-1.5 rounded-md bg-white px-3 py-1 text-sm font-medium text-black"
+                aria-label={`Remove ${t}`}
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-md bg-amber-400 px-3 py-1 text-sm font-medium text-black"
               >
-                <Icon className="h-3.5 w-3.5" strokeWidth={2} />
-                {t} <IconX className="h-3 w-3" />
+                <Check aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={2} />
+                {t} <IconX aria-hidden="true" className="h-3 w-3" />
               </button>
-            );
-          }}
-        />
-      )}
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-white/55">No interests selected yet.</p>
+        )}
+      </section>
+      <label htmlFor={`${pickerId}-search`} className={labelCls}>
+        Find or add an interest
+      </label>
       <input
+        id={`${pickerId}-search`}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={(e) => {
@@ -123,11 +123,15 @@ export function TagPicker({
         placeholder={placeholder}
         className={inputCls}
       />
-      {(available.length > 0 || showCreateNew) && (
-        <div className="mt-2 flex flex-wrap gap-2">
+      <section aria-labelledby={`${pickerId}-explore`} className="mt-4">
+        <h4 id={`${pickerId}-explore`} className="mb-2 text-sm font-semibold text-white/80">
+          Explore interests
+        </h4>
+        <div className="flex max-h-64 flex-wrap gap-2 overflow-y-auto p-1">
           {available.map((s) => {
             const Icon = iconForInterest(s);
             const exact = ql !== "" && s.toLowerCase() === ql;
+            const selected = value.find((v) => v.toLowerCase() === s.toLowerCase());
             return (
               <button
                 type="button"
@@ -135,15 +139,30 @@ export function TagPicker({
                 // Stop the input's onBlur (which would add the raw draft) from
                 // firing before this click registers.
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => add(s)}
-                className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1 text-sm transition-colors hover:bg-white/10 ${
-                  exact
-                    ? "border-amber-400 text-amber-400"
-                    : "border-white/20 text-white/70"
+                onClick={() => {
+                  if (selected) {
+                    remove(selected);
+                    // An exact search must not re-add this chip on blur.
+                    setDraft("");
+                  } else {
+                    add(s);
+                  }
+                }}
+                aria-pressed={Boolean(selected)}
+                className={`inline-flex min-h-9 items-center gap-1.5 rounded-md border px-3 py-1 text-sm transition-colors ${
+                  selected
+                    ? "border-amber-400 bg-amber-400 font-medium text-black hover:bg-amber-300"
+                    : exact
+                      ? "border-amber-400 text-amber-400 hover:bg-white/10"
+                      : "border-white/20 text-white/70 hover:bg-white/10"
                 }`}
               >
-                <Icon className="h-3.5 w-3.5" strokeWidth={2} />
-                {exact ? s : <HighlightedText text={s} query={q} />}
+                {selected ? (
+                  <Check aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={2} />
+                ) : (
+                  <Icon aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={2} />
+                )}
+                {selected || exact ? s : <HighlightedText text={s} query={q} />}
               </button>
             );
           })}
@@ -160,8 +179,11 @@ export function TagPicker({
               {q}
             </button>
           )}
+          {available.length === 0 && !showCreateNew && (
+            <p className="text-sm text-white/55">No matching interests. Try another search.</p>
+          )}
         </div>
-      )}
+      </section>
     </div>
   );
 }
@@ -254,10 +276,11 @@ export function PhotoUploader({
     <div>
       <input
         type="file"
+        aria-label="Choose photos"
         accept="image/*"
         multiple
         onChange={(e) => onFiles(e.target.files)}
-        className="mt-2 block w-full text-sm text-white/70 file:mr-3 file:rounded-full file:border-0 file:bg-white file:px-4 file:py-2 file:text-sm file:font-medium file:text-black"
+        className="mt-2 block w-full text-sm text-white/70 file:mr-3 file:rounded-full file:border-0 file:bg-amber-400 file:px-4 file:py-2 file:text-sm file:font-medium file:text-black file:cursor-pointer hover:file:bg-amber-300"
       />
       {error && <p className="mt-1 text-sm text-red-400">{error}</p>}
       {uploading > 0 && <p className="mt-1 text-sm text-white/50">Uploading {uploading}…</p>}

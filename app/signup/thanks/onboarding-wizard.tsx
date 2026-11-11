@@ -134,7 +134,7 @@ export function OnboardingWizard({
         ))}
       </OnboardingGateContext.Provider>
 
-      <div className="mt-10 flex flex-wrap items-center gap-3 border-t border-white/10 pt-6">
+      <div className="sticky bottom-0 z-20 -mx-6 mt-6 flex flex-wrap items-center gap-3 border-t border-white/10 bg-black px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         {index > 0 && (
           <button
             type="button"

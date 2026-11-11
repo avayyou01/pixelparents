@@ -63,15 +63,23 @@ function UsagePanel({
 
 function AccountHeader() {
   return (
-    <header className="mb-8 flex items-center justify-between gap-4">
+    <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Account</h1>
         <p className="mt-1 text-sm text-white/55">
           Your profile, API access, and family settings.
         </p>
       </div>
-      {/* Kept for one-click Sign out; "Manage account" now lives inline below. */}
-      <UserButton appearance={clerkAppearance} />
+      <div className="flex shrink-0 flex-wrap items-center gap-3">
+        <Link
+          href="/family#your-profile"
+          className="rounded-full bg-amber-400 px-4 py-2 text-sm font-semibold text-black transition hover:bg-amber-300"
+        >
+          Edit profile
+        </Link>
+        {/* Kept for one-click Sign out; "Manage account" lives inline below. */}
+        <UserButton appearance={clerkAppearance} />
+      </div>
     </header>
   );
 }

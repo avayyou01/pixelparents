@@ -320,6 +320,14 @@ export async function ProfileView({
       {visible.has("location") && location && (
         <p className="mt-1.5 text-white/60">{location}</p>
       )}
+      {isOwner && (
+        <Link
+          href="/family#your-profile"
+          className="mt-4 inline-flex rounded-full bg-amber-400 px-4 py-2 text-sm font-semibold text-black transition hover:bg-amber-300"
+        >
+          Edit profile
+        </Link>
+      )}
       {canConnect && (
         <div className="mt-4">
           <ConnectCta signupId={signup.id} name={displayName} topics={connectTopics} />

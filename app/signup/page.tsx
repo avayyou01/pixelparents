@@ -62,17 +62,16 @@ export default async function SignupPage({
         <div className="flex flex-col items-center text-center">
           <PixelMascot widthClass="w-24" href="/" />
           <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-            {count > 0 ? (
-              <>
-                Join <span className="text-amber-400">{count.toLocaleString()}</span>{" "}
-                other GoPixel
-              </>
-            ) : (
-              "Join GoPixel"
-            )}
+            Join the GoPixel community
           </h1>
           <h2 className="mt-2 max-w-prose text-xl font-bold text-white/80 sm:text-2xl">
-            and connect with{" "}
+            {count > 0 && (
+              <>
+                <span className="text-amber-400">{count.toLocaleString()}</span>{" "}
+                members connecting with{" "}
+              </>
+            )}
+            {count === 0 && "Connect with "}
             <span className="text-amber-400">{kidsCount.toLocaleString()}</span>{" "}
             OHS students
             <br />

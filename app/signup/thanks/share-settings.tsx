@@ -65,10 +65,11 @@ export function ShareSettings({
             Share your family profile with other OHS families?
           </h3>
           <p className="mt-1 text-sm text-white/55">
-            Select{" "}
+            Choose{" "}
             <code className="rounded bg-white/10 px-1 font-mono text-white/90">OHS families</code>{" "}
-            below to allow other logged in OHS family users to see your family
-            profile.
+            to let signed-in OHS family members view your shared profile, or Just me
+            to hide it from the directory and its share link. Choose which details
+            appear below.
           </p>
         </div>
         <VisibilityControl id={signupId} mode="signup" value={initialVisibility} editable loggedIn />

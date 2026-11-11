@@ -169,6 +169,9 @@ export function StepInterests({
           ? "What are you into? Interests power the directory's shared-interest matching."
           : "What are you into? Other families find you through shared interests."}
       </p>
+      <p className="text-sm text-white/65">
+        You can change your interests later from Edit profile on your account page.
+      </p>
       <TagPicker
         value={interests}
         onChange={(next) => {

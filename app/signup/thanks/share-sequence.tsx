@@ -96,8 +96,10 @@ export function ShareSequence({ signupId }: { signupId: string }) {
       <div className={box}>
         <h3 className="font-semibold text-white">Choose what you share</h3>
         <p className="mt-1 text-sm text-white/55">
-          A few quick questions — one for each piece of info you&apos;ve added.
-          Nothing is visible to anyone until you say so.
+          Completed signups are initially shared with OHS families. Review who
+          can see your profile and which details appear. Choose No on the next
+          question to make your profile private. Skipping keeps your current
+          visibility setting.
         </p>
         <button
           type="button"
@@ -119,8 +121,9 @@ export function ShareSequence({ signupId }: { signupId: string }) {
           Do you want your profile listed in the OHS directory?
         </h3>
         <p className="mt-1 text-sm text-white/55">
-          Only signed-in, verified OHS families can see the directory. Answer no
-          and your profile stays private — you can change this any time.
+          A shared profile can be viewed by signed-in OHS family members.
+          Choose No to hide your profile from the directory and its share link.
+          You can change this later in your account settings.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <button type="button" disabled={pending} onClick={() => answerMaster(true)} className={btnYes}>
