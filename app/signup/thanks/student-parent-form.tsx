@@ -238,7 +238,7 @@ export default function StudentParentForm({
         <div className="flex items-center gap-3">
           {hasParent ? (
             <Link
-              href="/signup/welcome"
+          href={`/signup/welcome?id=${encodeURIComponent(signupId)}`}
               className="rounded-full bg-white px-6 py-3 font-semibold text-black transition-opacity hover:opacity-90"
             >
               Finish →
