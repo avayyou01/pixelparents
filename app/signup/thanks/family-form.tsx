@@ -139,7 +139,7 @@ export function TagPicker({
             pieces would otherwise render as separate gapped items. */}
         <span>{exact || selected || opts.relatedTo ? s : <HighlightedText text={s} query={q} />}</span>
         {ql !== "" && !selected && n > 0 && (
-          <span className="text-xs text-white/40">· {peopleLabel(n)}</span>
+          <span className="text-xs text-white/55">· {peopleLabel(n)}</span>
         )}
       </button>
     );
@@ -183,7 +183,7 @@ export function TagPicker({
       <div className="mt-2 flex flex-wrap items-center gap-2">
         {direct.map((s) => chip(s))}
         {related.length > 0 && (
-          <span className="text-xs font-medium text-white/45">
+          <span className="text-xs font-medium text-white/55">
             {direct.length > 0 ? "Related:" : `Related to "${q}":`}
           </span>
         )}
@@ -195,7 +195,7 @@ export function TagPicker({
     <div className="mt-3 flex flex-col gap-3">
       {groupInterests(suggestions).map((g) => (
         <div key={g.id}>
-          <p className="mb-1.5 text-xs font-medium text-white/45">{g.label}</p>
+          <p className="mb-1.5 text-xs font-medium text-white/55">{g.label}</p>
           <div className="flex flex-wrap gap-2">{g.items.map((s) => chip(s))}</div>
         </div>
       ))}
@@ -255,10 +255,10 @@ export function TagPicker({
       <div className="order-1 sm:order-2 sm:border-l sm:border-white/10 sm:pl-6">
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/50">
           {labels.selected}
-          {value.length > 0 && <span className="ml-1 font-normal normal-case text-white/40">({value.length})</span>}
+          {value.length > 0 && <span className="ml-1 font-normal normal-case text-white/55">({value.length})</span>}
         </p>
         {selectedChips || (
-          <p className="text-sm text-white/40">Nothing yet. Pick from the list or type your own.</p>
+          <p className="text-sm text-white/55">Nothing yet. Pick from the list or type your own.</p>
         )}
       </div>
     </div>

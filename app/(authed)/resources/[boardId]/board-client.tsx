@@ -278,7 +278,7 @@ export function BoardDetailClient({
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-white/80">Contributions</h2>
-          <p className="mt-0.5 text-xs text-white/45">
+          <p className="mt-0.5 text-xs text-white/55">
             Add a link, a file, or a written note. Upvote what helps; the board&apos;s creator can pin
             the most useful ones.
           </p>

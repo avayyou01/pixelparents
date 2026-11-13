@@ -51,7 +51,7 @@ function MatchCard({ match }: { match: SharedInterestMatch }) {
         )}
       </div>
       {related.length > 0 && (
-        <p className="mt-1.5 text-xs text-white/45">
+        <p className="mt-1.5 text-xs text-white/55">
           Similar to your {related[0]!.yours}
           {related.length > 1 ? ` and ${related.length - 1} more` : ""}
         </p>
