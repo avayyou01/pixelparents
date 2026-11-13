@@ -5,6 +5,44 @@ interest grouping and near-duplicates, the side-by-side picker layout,
 related suggestions while typing, related-interest matching, and explaining
 resource boards.
 
+## Progress Update as of [November 12, 2026 — late evening Pacific]
+
+### Summary of changes since last update
+
+Browser-tested everything in both themes and at phone width; raised the
+contrast of the new small helper text after measuring it.
+
+### Detail of changes made:
+
+- **Contrast:** the category headings, the "Related" label, the "· N people"
+  count, the empty-selection line, the board's contribution hint and the
+  dashboard's "Similar to" line used 40–45% white, which measured 4.43–4.47:1
+  in dark mode (just under the 4.5:1 AA minimum for small text). Raised to
+  55%; re-measured 6.25:1 dark / 5.91–6.09:1 light.
+
+### Browser test (local dev server, Chrome, local-only harness with stubbed
+### data, never committed)
+
+- Picker: categories render in order with "Other interests" last, Dispersed
+  Camping and Hiking now sit together under Outdoors & nature; Explore left /
+  Your selected interests right with a live count; on a 390px viewport the
+  selected list comes first and nothing scrolls sideways.
+- Typing "cycling" shows 'Related to "cycling":' Biking · 3 people and
+  Mountain biking · 1 person (dashed), plus "+ cycling"; picking Biking
+  selects it and clears the box.
+- Entering "Books: harry potter" selects the existing "Book: Harry Potter"
+  (lit in the list, listed on the right), with no duplicate.
+- Dashboard: a family sharing Hiking and listing Cycling shows "1 shared" with
+  a dashed Cycling chip and "Similar to your Biking"; a family listing only
+  "Books: Percy Jackson" shows "1 similar" and "Similar to your Book: Harry
+  Potter"; a family with no overlap is left out.
+- Boards: the three-step explainer renders; the create form shows the new
+  placeholders; a board shows the contribution hint and the new empty state.
+
+### Verification (exit codes, per-stage, not tail-piped)
+
+- `tsc --noEmit` = 0, `next lint` = 0, `vitest run` = 0 with **1113/1113 tests**, production build = 0, all after the contrast change.
+
 ## Progress Update as of [November 12, 2026 — evening Pacific]
 
 ### Summary of changes since last update
@@ -62,5 +100,6 @@ explain themselves on the boards page, the create page and each board.
 
 ### Verification
 
-- Recorded in the next entry (per-stage exit codes, not tail-piped; browser
-  test in both themes).
+- `tsc --noEmit` = 0, `next lint` = 0, `vitest run` = 0 with **1113/1113
+  tests** (93 files; 13 new in `lib/interest-taxonomy.test.ts`), production
+  build = 0.
